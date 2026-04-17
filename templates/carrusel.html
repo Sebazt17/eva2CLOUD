@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVA2 CLOUD — Galería</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+    /* ═══════════════════════════════════════
+       RESET & TOKENS
+    ═══════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+        --black:   #04060a;
+        --ink:     #0b0e14;
+        --surface: rgba(255,255,255,0.03);
+        --border:  rgba(255,255,255,0.07);
+        --accent:  #e8d5a3;   /* oro apagado */
+        --accent2: #5bbfff;   /* cian frío */
+        --text:    #d8dce6;
+        --muted:   rgba(216,220,230,0.4);
+        --danger:  #ff4c5e;
+        --font-display: 'Bebas Neue', sans-serif;
+        --font-body:    'DM Sans', sans-serif;
+        --font-mono:    'DM Mono', monospace;
+        --ease: cubic-bezier(0.76, 0, 0.24, 1);
+    }
+
+    html, body {
+        height: 100%;
+        background: var(--black);
+        color: var(--text);
+        font-family: var(--font-body);
+        font-weight: 300;
+        overflow: hidden; /* full viewport layout */
+    }
+
+    /* ═══════════════════════════════════════
+       LAYOUT SHELL
+    ═══════════════════════════════════════ */
+    .shell {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        height: 100vh;
+        position: relative;
+    }
+
+    /* Grain texture overlay */
+    .shell::before {
+        content: '';
+        position: fixed; inset: 0; z-index: 1000;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+        pointer-events: none;
+        opacity: 0.45;
+    }
+
+    /* ═══════════════════════════════════════
+       NAVBAR
+    ═══════════════════════════════════════ */
+    .navbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 3rem;
+        height: 64px;
+        border-bottom: 1px solid var(--border);
+        background: rgba(4,6,10,0.8);
+        backdrop-filter: blur(20px);
+        position: relative; z-index: 100;
+        animation: slideDown 0.6s var(--ease) both;
+    }
+
+    @keyframes slideDown {
+        from { opacity: 0; transform: translateY(-20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .brand {
+        font-family: var(--font-display);
+        font-size: 1.5rem;
+        letter-spacing: 3px;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .brand em { color: var(--accent); font-style: normal; }
+
+    /* Dot separator */
+    .brand::after {
+        content: '';
+        display: inline-block;
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: var(--accent2);
+        margin-left: 10px;
+        animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+        0%,100% { opacity: 1; } 50% { opacity: 0.2; }
+    }
+
+    .nav-meta {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .nav-counter {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        color: var(--muted);
+        letter-spacing: 1px;
+    }
+
+    .nav-counter span {
+        color: var(--accent);
+        font-weight: 500;
+    }
+
+    /* Logout */
+    .btn-logout {
+        font-family: var(--font-body);
+        font-size: 0.75rem;
+        font-weight: 500;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: transparent;
+        border: 1px solid var(--border);
+        padding: 7px 18px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.15s;
+        text-decoration: none;
+        display: flex; align-items: center; gap: 7px;
+    }
+
+    .btn-logout svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+    .btn-logout:hover {
+        color: var(--danger);
+        border-color: var(--danger);
+        background: rgba(255,76,94,0.07);
+        transform: translateY(-1px);
+    }
+
+    /* ═══════════════════════════════════════
+       MAIN STAGE
+    ═══════════════════════════════════════ */
+    .stage {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ── Slides ── */
+    .slides {
+        position: absolute; inset: 0;
+    }
+
+    .slide {
+        position: absolute; inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.1s; /* override by JS */
+    }
+
+    .slide.active { opacity: 1; pointer-events: auto; }
+
+    /* Background image (blurred) */
+    .slide-bg {
+        position: absolute; inset: -40px;
+        background-size: cover;
+        background-position: center;
+        filter: blur(28px) brightness(0.25) saturate(0.7);
+        transform: scale(1.1);
+        transition: transform 8s linear;
+    }
+
+    .slide.active .slide-bg { transform: scale(1.18); }
+
+    /* Main image */
+    .slide-img-wrap {
+        position: relative; z-index: 2;
+        max-width: 72vw;
+        max-height: 72vh;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 40px 80px -20px rgba(0,0,0,0.9), 0 0 0 1px var(--border);
+    }
+
+    .slide-img-wrap img {
+        display: block;
+        max-width: 72vw;
+        max-height: 72vh;
+        width: auto; height: auto;
+        object-fit: contain;
+        border-radius: 4px;
+    }
+
+    /* Scan line shimmer on active slide */
+    .slide-img-wrap::after {
+        content: '';
+        position: absolute; inset: 0;
+        background: linear-gradient(to bottom,
+            transparent 0%, transparent 48%,
+            rgba(255,255,255,0.03) 50%,
+            transparent 52%, transparent 100%);
+        background-size: 100% 4px;
+        animation: scanlines 0.1s steps(1) infinite;
+        pointer-events: none;
+        opacity: 0;
+        border-radius: 4px;
+    }
+
+    .slide.active .slide-img-wrap::after { opacity: 1; }
+
+    @keyframes scanlines {
+        0%  { background-position: 0 0; }
+        100%{ background-position: 0 4px; }
+    }
+
+    /* ── Caption ── */
+    .caption {
+        position: absolute; z-index: 3;
+        bottom: 0; left: 0; right: 0;
+        padding: 2rem 3rem;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        background: linear-gradient(to top, rgba(4,6,10,0.85) 0%, transparent 100%);
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(12px);
+        transition: opacity 0.5s var(--ease) 0.2s, transform 0.5s var(--ease) 0.2s;
+    }
+
+    .slide.active .caption { opacity: 1; transform: translateY(0); }
+
+    .caption-title {
+        font-family: var(--font-display);
+        font-size: clamp(1.8rem, 4vw, 3.5rem);
+        letter-spacing: 4px;
+        color: var(--text);
+        line-height: 1;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+    }
+
+    .caption-title em {
+        color: var(--accent);
+        font-style: normal;
+    }
+
+    .caption-index {
+        font-family: var(--font-mono);
+        font-size: 0.7rem;
+        letter-spacing: 2px;
+        color: var(--muted);
+        text-align: right;
+        line-height: 1.6;
+    }
+
+    /* ═══════════════════════════════════════
+       FILMSTRIP (THUMBNAILS)
+    ═══════════════════════════════════════ */
+    .filmstrip {
+        height: 84px;
+        border-top: 1px solid var(--border);
+        background: rgba(4,6,10,0.9);
+        backdrop-filter: blur(20px);
+        display: flex;
+        align-items: center;
+        gap: 0;
+        padding: 0 3rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        position: relative; z-index: 100;
+        animation: slideUp 0.6s var(--ease) 0.1s both;
+    }
+
+    .filmstrip::-webkit-scrollbar { display: none; }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Sprocket holes decoration */
+    .filmstrip::before, .filmstrip::after {
+        content: '';
+        position: absolute; top: 0; bottom: 0; width: 3rem;
+        pointer-events: none; z-index: 2;
+    }
+    .filmstrip::before { left: 0; background: linear-gradient(to right, rgba(4,6,10,1), transparent); }
+    .filmstrip::after  { right: 0; background: linear-gradient(to left, rgba(4,6,10,1), transparent); }
+
+    .thumb {
+        flex-shrink: 0;
+        width: 56px; height: 56px;
+        border-radius: 3px;
+        overflow: hidden;
+        margin-right: 8px;
+        cursor: pointer;
+        border: 1.5px solid transparent;
+        transition: border-color 0.2s, transform 0.2s, opacity 0.2s;
+        opacity: 0.4;
+        position: relative;
+    }
+
+    .thumb img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s var(--ease);
+    }
+
+    .thumb:hover { opacity: 0.75; transform: scaleY(1.08); }
+    .thumb:hover img { transform: scale(1.08); }
+
+    .thumb.active {
+        border-color: var(--accent);
+        opacity: 1;
+        transform: scaleY(1.1);
+    }
+
+    /* ── Navigation arrows ── */
+    .nav-arrows {
+        position: absolute;
+        top: 50%; transform: translateY(-50%);
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        padding: 0 1.5rem;
+        pointer-events: none;
+        z-index: 10;
+    }
+
+    .nav-btn {
+        pointer-events: auto;
+        width: 44px; height: 44px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        backdrop-filter: blur(10px);
+        color: var(--text);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+    }
+
+    .nav-btn svg { width: 18px; height: 18px; }
+
+    .nav-btn:hover {
+        background: rgba(232,213,163,0.12);
+        border-color: var(--accent);
+        transform: scale(1.08);
+    }
+
+    .nav-btn:active { transform: scale(0.94); }
+
+    /* ── Progress bar ── */
+    .progress-bar-wrap {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        height: 2px;
+        background: rgba(255,255,255,0.05);
+        z-index: 20;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--accent2), var(--accent));
+        width: 0%;
+        transition: width 0.1s linear;
+    }
+
+    /* ── Empty state ── */
+    .empty-state {
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        height: 100%; gap: 1rem;
+        font-family: var(--font-display);
+        font-size: 1.4rem;
+        letter-spacing: 3px;
+        color: var(--muted);
+    }
+
+    .empty-state svg { width: 48px; height: 48px; opacity: 0.3; }
+    .empty-state p { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 1px; }
+
+    /* ── Keyboard hint ── */
+    .kbd-hint {
+        position: absolute; bottom: 18px; right: 3rem;
+        z-index: 10; display: flex; gap: 8px;
+        font-family: var(--font-mono);
+        font-size: 0.65rem;
+        color: var(--muted);
+        pointer-events: none;
+        opacity: 0;
+        animation: fadeIn 1s var(--ease) 1.2s both;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .kbd {
+        background: rgba(255,255,255,0.06);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 2px 6px;
+        font-size: 0.65rem;
+    }
+
+    /* ─── TRANSITIONS ─── */
+    /* applied via JS class on .slides */
+    .slides.t-fade .slide        { transition: opacity 0.65s var(--ease); }
+    .slides.t-slide .slide       { transition: opacity 0s, transform 0.7s var(--ease); }
+    .slides.t-slide .slide:not(.active) { transform: translateX(60px); }
+    .slides.t-slide .slide.active { transform: translateX(0); opacity: 1; }
+    .slides.t-slide .slide.exit   { transform: translateX(-60px); opacity: 0; }
+    </style>
+</head>
+<body>
+<div class="shell">
+
+    <!-- ── NAVBAR ── -->
+    <nav class="navbar">
+        <div class="brand">EVA2<em>CLOUD</em></div>
+        <div class="nav-meta">
+            <div class="nav-counter">IMAGEN <span id="nav-current">01</span> / <span id="nav-total">—</span></div>
+            <form action="{% url 'logout' %}" method="post" style="margin:0">
+                {% csrf_token %}
+                <button type="submit" class="btn-logout">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Salir
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- ── STAGE ── -->
+    <main class="stage">
+
+        <!-- Slides container (Django template loop) -->
+        <div class="slides t-fade" id="slides">
+
+            {% for foto in fotos %}
+            <div class="slide {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}">
+                <div class="slide-bg" style="background-image: url('{{ foto.imagen.url }}')"></div>
+                <div class="slide-img-wrap">
+                    <img src="{{ foto.imagen.url }}" alt="{{ foto.titulo }}" loading="lazy">
+                </div>
+                <div class="caption">
+                    <div class="caption-title">{{ foto.titulo }}</div>
+                    <div class="caption-index">
+                        {{ forloop.counter }} / {{ fotos|length }}<br>
+                        <span style="font-size:0.6rem;letter-spacing:1px">EVA2CLOUD</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Base de datos vacía
+                <p>Sube fotos desde /admin/</p>
+            </div>
+            {% endfor %}
+
+        </div>
+
+        <!-- Navigation arrows -->
+        <div class="nav-arrows">
+            <button class="nav-btn" id="btn-prev" aria-label="Anterior">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                </svg>
+            </button>
+            <button class="nav-btn" id="btn-next" aria-label="Siguiente">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+        </div>
+
+        <!-- Keyboard hint -->
+        <div class="kbd-hint">
+            <span class="kbd">←</span><span class="kbd">→</span>&nbsp;navegar &nbsp;
+            <span class="kbd">Space</span>&nbsp;auto
+        </div>
+
+    </main>
+
+    <!-- ── FILMSTRIP ── -->
+    <footer class="filmstrip" id="filmstrip">
+        {% for foto in fotos %}
+        <div class="thumb {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}">
+            <img src="{{ foto.imagen.url }}" alt="{{ foto.titulo }}" loading="lazy">
+        </div>
+        {% endfor %}
+    </footer>
+
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════ -->
+<script>
+(function() {
+
+    const slides      = Array.from(document.querySelectorAll('.slide'));
+    const thumbs      = Array.from(document.querySelectorAll('.thumb'));
+    const filmstrip   = document.getElementById('filmstrip');
+    const progressBar = document.getElementById('progress-fill');
+    const navCurrent  = document.getElementById('nav-current');
+    const navTotal    = document.getElementById('nav-total');
+    const slidesWrap  = document.getElementById('slides');
+
+    if (!slides.length) return;
+
+    const TOTAL      = slides.length;
+    const AUTO_DELAY = 5000; // ms per slide
+    let   current    = 0;
+    let   autoTimer  = null;
+    let   progTimer  = null;
+    let   progStart  = null;
+    let   autoRunning = true;
+
+    /* ── Update UI ── */
+    navTotal.textContent = String(TOTAL).padStart(2, '0');
+
+    function goTo(index, dir = 1) {
+        const prev = current;
+        current = ((index % TOTAL) + TOTAL) % TOTAL;
+
+        if (prev === current) return;
+
+        slides[prev].classList.remove('active');
+        slides[current].classList.add('active');
+
+        thumbs[prev].classList.remove('active');
+        thumbs[current].classList.add('active');
+
+        navCurrent.textContent = String(current + 1).padStart(2, '0');
+
+        // Scroll filmstrip to keep active thumb visible
+        const thumb = thumbs[current];
+        thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+        resetProgress();
+    }
+
+    function next() { goTo(current + 1,  1); }
+    function prev() { goTo(current - 1, -1); }
+
+    /* ── Auto-play ── */
+    function startAuto() {
+        clearInterval(autoTimer);
+        autoTimer = setInterval(next, AUTO_DELAY);
+        autoRunning = true;
+        resetProgress();
+    }
+
+    function stopAuto() {
+        clearInterval(autoTimer);
+        autoRunning = false;
+        progressBar.style.width = '0%';
+    }
+
+    /* ── Progress bar animation ── */
+    function resetProgress() {
+        clearTimeout(progTimer);
+        progressBar.style.transition = 'none';
+        progressBar.style.width = '0%';
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                progressBar.style.transition = `width ${AUTO_DELAY}ms linear`;
+                progressBar.style.width = '100%';
+            });
+        });
+    }
+
+    /* ── Controls ── */
+    document.getElementById('btn-prev').addEventListener('click', () => { stopAuto(); prev(); startAuto(); });
+    document.getElementById('btn-next').addEventListener('click', () => { stopAuto(); next(); startAuto(); });
+
+    thumbs.forEach(t => {
+        t.addEventListener('click', () => {
+            stopAuto();
+            goTo(parseInt(t.dataset.index));
+            startAuto();
+        });
+    });
+
+    /* ── Keyboard ── */
+    document.addEventListener('keydown', e => {
+        if (e.key === 'ArrowLeft')  { stopAuto(); prev(); startAuto(); }
+        if (e.key === 'ArrowRight') { stopAuto(); next(); startAuto(); }
+        if (e.key === ' ') {
+            e.preventDefault();
+            autoRunning ? stopAuto() : startAuto();
+        }
+    });
+
+    /* ── Touch / Swipe ── */
+    let touchX = null;
+    document.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+    document.addEventListener('touchend', e => {
+        if (touchX === null) return;
+        const dx = e.changedTouches[0].clientX - touchX;
+        if (Math.abs(dx) > 40) {
+            stopAuto();
+            dx < 0 ? next() : prev();
+            startAuto();
+        }
+        touchX = null;
+    }, { passive: true });
+
+    /* ── Init ── */
+    navCurrent.textContent = '01';
+    startAuto();
+
+})();
+</script>
+</body>
+</html>
