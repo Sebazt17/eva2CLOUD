@@ -75,8 +75,15 @@ WSGI_APPLICATION = 'eva2_cloud.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'eva2_cloud_db',     # El nombre exacto que pusiste en phpMyAdmin
+        'USER': 'root',              # Por defecto en WAMP/XAMPP es 'root'
+        'PASSWORD': '',              # Por defecto en WAMP/XAMPP está vacío
+        'HOST': '127.0.0.1',         # O 'localhost'
+        'PORT': '3306',              # Puerto por defecto de MySQL
+        'OPTIONS': {
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+        }
     }
 }
 
@@ -104,6 +111,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Configuración de Login
+LOGIN_URL = 'login' 
 LOGIN_REDIRECT_URL = 'carrusel'  # Nombre de la URL de la página del carrusel
 LOGOUT_REDIRECT_URL = 'login'
 
